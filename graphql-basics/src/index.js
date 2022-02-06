@@ -12,6 +12,7 @@ const typeDefs = `
         post: Post!
         users(query: String): [User!]!
         posts(query: String): [Post!]!
+        comments(query: String): [Comment!]!
     }
 
     type User {
@@ -20,6 +21,7 @@ const typeDefs = `
         email: String!
         age: Int
         posts: [Post!]
+        comments: [Comment!]
     }
 
     type Post {
@@ -28,6 +30,14 @@ const typeDefs = `
         body: String!
         published: Boolean!
         author: User!
+        comments: [Comment!]
+    }
+
+    type Comment {
+        id: ID!
+        text: String!
+        author: User!
+        post: Post!
     }
 `
 const users = [{
@@ -65,6 +75,26 @@ const posts = [{
     author: '3'
 }]
 
+const comments = [{
+    id: '21',
+    text: 'Program',
+    author: '1',
+    post: '10'
+},
+{
+    id: '22',
+    text: 'Programming Music',
+    author: '2',
+    post: '11'
+},
+{
+    id: '23',
+    text: 'Programming Dance',
+    author: '3',
+    post: '12'
+}
+]
+
 // Resolvers
 const resolvers = {
     Query: {
@@ -76,6 +106,15 @@ const resolvers = {
                 age: 30
             }
         },
+        post() {
+            return {
+                id: '092',
+                title: 'GraphQL 101',
+                body: '',
+                published: false,
+                author: '1'
+            }
+        },
         greeting(parent, args, ctx, info) {
             if (args.name) {
                 return `Hello ${args.name}`
@@ -84,17 +123,17 @@ const resolvers = {
             }
         },
         grades(parent, args, ctx, info) {
-            return [90,54,24,53]
+            return [90, 54, 24, 53]
         },
         add(parent, args, ctx, info) {
-            if(args.numbers.length === 0) {
+            if (args.numbers.length === 0) {
                 return 0
             } else {
                 return args.numbers.reduce((acc, val) => acc + val, 0);
             }
         },
         users(parent, args, ctx, info) {
-            if(!args.query) {
+            if (!args.query) {
                 return users
             } else {
                 return users.filter(user => user.name.toLowerCase() === args.query.toLowerCase())
@@ -111,25 +150,33 @@ const resolvers = {
                 return isTitleMatch || isBodyMatch
             })
         },
-        post() {
-            return {
-                id: '092',
-                title: 'GraphQL 101',
-                body: '',
-                published: false,
-                author: '1'
-            }
+        comments(parent, args, ctx, info) {
+            return comments
         }
-        
+
     },
     Post: {
         author(parent, args, ctx, info) {
-           return users.find((user) => user.id === parent.author) 
+            return users.find((user) => user.id === parent.author)
+        },
+        comments(parent, args, ctx, info) {
+            return comments.filter((comment) => comment.post === parent.id)
         }
     },
     User: {
         posts(parent, args, ctx, info) {
             return posts.filter(post => post.author === parent.id)
+        },
+        comments(parent, args, ctx, info) {
+            return comments.filter(comment => comment.author === parent.id)
+        }
+    },
+    Comment: {
+        author(parent, args, ctx, info) {
+            return users.find(user => user.id === parent.author)
+        },
+        post(parent, args, ctx, info) {
+            return posts.find(post => post.id === parent.post)
         }
     }
 }
